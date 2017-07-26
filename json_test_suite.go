@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"time"
 	"strconv"
+	"sort"
 )
 
 func assert(reason string, err interface{}) {
@@ -17,10 +18,29 @@ func assert(reason string, err interface{}) {
 }
 
 func max(x int, y int) int {
-	if (x > y) {
+	if x > y {
 		return x
 	}
 	return y
+}
+
+func min(x int64, y int64) int64 {
+	if x < y {
+		return x
+	}
+	return y
+}
+
+type by [][]string
+
+func (a by) Len() int {
+	return len(a)
+}
+func (a by) Swap(i, j int) {
+	a[i], a[j] = a[j], a[i]
+}
+func (a by) Less(i, j int) bool {
+	return strings.Compare(a[i][0], a[j][0]) < 0
 }
 
 func CompareUnmarshal(actors map[string]func(data []byte) (interface{}, error), testSuiteDir string) {
@@ -40,7 +60,7 @@ func CompareUnmarshal(actors map[string]func(data []byte) (interface{}, error), 
 	columnIndex := 0
 	var row []string
 	row = make([]string, len(actors) + 1)
-	row[columnIndex] = "case\actor"
+	row[columnIndex] = "case"
 	columnWidth[columnIndex] = len(row[columnIndex]) + 5
 	columnIndex++
 	for name := range actors {
@@ -53,6 +73,8 @@ func CompareUnmarshal(actors map[string]func(data []byte) (interface{}, error), 
 	var start time.Time
 	var testCount int
 	var i int
+	var rowMin int64
+	var rowTimes = make([]int64, len(actors) + 1)
 	for name, input := range okCases {
 		row = make([]string, len(actors) + 1)
 		columnIndex = 0
@@ -73,13 +95,21 @@ func CompareUnmarshal(actors map[string]func(data []byte) (interface{}, error), 
 		row[columnIndex] = fmt.Sprintf("%s(%db/%d)", name, len(input), testCount)
 		columnWidth[columnIndex] = max(columnWidth[columnIndex], len(row[columnIndex]) + 5)
 		columnIndex++
+		rowMin = 1 << 60
 		for k, actor := range actors {
 			start = time.Now()
 			for i = 0; i < testCount; i++ {
 				_, err = actor(input)
 				assert(name + " " + k, err)
 			}
-			row[columnIndex] = strconv.FormatInt(time.Now().Sub(start).Nanoseconds(), 10) + "ns"
+			rowTimes[columnIndex] = time.Now().Sub(start).Nanoseconds() / int64(testCount)
+			rowMin = min(rowMin, rowTimes[columnIndex])
+			row[columnIndex] = strconv.FormatInt(rowMin, 10)
+			columnIndex++
+		}
+		columnIndex = 1
+		for _ = range actors {
+			row[columnIndex] = strconv.FormatFloat(float64(rowTimes[columnIndex]) / float64(rowMin), 'G', 3, 64)
 			columnWidth[columnIndex] = max(columnWidth[columnIndex], len(row[columnIndex]) + 5)
 			columnIndex++
 		}
@@ -88,6 +118,7 @@ func CompareUnmarshal(actors map[string]func(data []byte) (interface{}, error), 
 	}
 	log.Print(columnWidth)
 	indexWidth := len(strconv.Itoa(len(outTable)))
+	sort.Sort(by(outTable[1:]))
 	for i, r := range outTable {
 		fmt.Printf(fmt.Sprintf("%%%dd.", indexWidth), i)
 		for j, c := range r {
