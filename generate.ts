@@ -9,7 +9,7 @@
  */
 
 
-import {writeFileSync} from 'fs'
+import { existsSync, mkdirSync, writeFileSync } from 'fs'
 
 function surrogate(str: string): string {
   let output = ''
@@ -25,9 +25,12 @@ function surrogate(str: string): string {
   return output
 }
 
-function write(data: any) {
+function write(dir: string, data: any) {
   const result_inline: any = {}
   const result_loose: any  = {}
+  if (!existsSync(dir)) {
+    mkdirSync(dir)
+  }
   for (const key in data) {
     result_inline[key] = JSON.stringify(data[key])
     result_loose[key]  = JSON.stringify(data[key], void 0, 2)
@@ -35,11 +38,11 @@ function write(data: any) {
       result_inline[key] = surrogate(result_inline[key])
       result_loose[key]  = surrogate(result_loose[key])
     }
-    writeFileSync(`${key}_inline.json`, result_inline[key])
-    writeFileSync(`${key}_loose.json`, result_loose[key])
+    writeFileSync(`${dir}/${key}_inline.json`, result_inline[key])
+    writeFileSync(`${dir}/${key}_loose.json`, result_loose[key])
   }
-  writeFileSync(`all_inline.json`, JSON.stringify(result_inline, void 0, 2))
-  writeFileSync(`all_loose.json`, JSON.stringify(result_loose, void 0, 2))
+  writeFileSync(`${dir}/all_inline.json`, JSON.stringify(result_inline, void 0, 2))
+  writeFileSync(`${dir}/all_loose.json`, JSON.stringify(result_loose, void 0, 2))
 }
 
 function initArray(size: number, exec: (index: number) => any): any[] {
@@ -147,8 +150,8 @@ const correct = {
   array_100_deep_integer: initArray(100, () => initArray(100, (i) => i)),
   array_100_deep_string: initArray(100, () => initArray(100, (i) => i.toString())),
   object_0: {},
-  object_null: {null: null},
-  object_empty_key: {'': null},
+  object_null: { null: null },
+  object_empty_key: { '': null },
   object_100_null: initObject(100, (i) => i, () => null),
   object_100_integer: initObject(100, (i) => i, (i) => i),
   object_deep_null: initObject(100, (i) => i, () => initObject(100, (i) => i, () => null)),
@@ -163,8 +166,8 @@ const correct = {
     false: false,
     string: 'hello world\r\b\t\r\f\\"',
     array: [1, null, [], [true], false, '≈çœ∑®†¥∂ƒ©˙∆'],
-    object: {1: null, '∑®†¥': false, 'array': []},
+    object: { 1: null, '∑®†¥': false, 'array': [] },
   },
 }
 
-write(correct)
+write('correct', correct)
