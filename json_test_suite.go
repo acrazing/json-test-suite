@@ -1,14 +1,14 @@
 package json_test_suite
 
 import (
-	"log"
-	"io/ioutil"
-	"strings"
-	"path"
 	"fmt"
-	"time"
-	"strconv"
+	"io/ioutil"
+	"log"
+	"path"
 	"sort"
+	"strconv"
+	"strings"
+	"time"
 )
 
 func assert(reason string, err interface{}) {
@@ -52,14 +52,14 @@ func CompareUnmarshal(actors map[string]func(data []byte) (interface{}, error), 
 			continue
 		}
 		okCases[strings.TrimRight(file.Name(), ".json")], err = ioutil.ReadFile(path.Join(testSuiteDir, file.Name()))
-		assert("read case: " + file.Name(), err)
+		assert("read case: "+file.Name(), err)
 	}
-	columnWidth := make([]int, len(actors) + 1)
-	outTable := make([][]string, len(okCases) + 1)
+	columnWidth := make([]int, len(actors)+1)
+	outTable := make([][]string, len(okCases)+1)
 	rowIndex := 0
 	columnIndex := 0
 	var row []string
-	row = make([]string, len(actors) + 1)
+	row = make([]string, len(actors)+1)
 	row[columnIndex] = "case"
 	columnWidth[columnIndex] = len(row[columnIndex]) + 5
 	columnIndex++
@@ -74,33 +74,33 @@ func CompareUnmarshal(actors map[string]func(data []byte) (interface{}, error), 
 	var testCount int
 	var i int
 	var rowMin int64
-	var rowTimes = make([]int64, len(actors) + 1)
+	var rowTimes = make([]int64, len(actors)+1)
 	for name, input := range okCases {
-		row = make([]string, len(actors) + 1)
+		row = make([]string, len(actors)+1)
 		columnIndex = 0
-		switch  {
-		case len(input) > 1 << 26: // 64Mb
+		switch {
+		case len(input) > 1<<26: // 64Mb
 			testCount = 1
-		case len(input) > 1 << 24: // 16Mb
+		case len(input) > 1<<24: // 16Mb
 			testCount = 5
-		case len(input) > 1 << 20: // 1Mb
+		case len(input) > 1<<20: // 1Mb
 			testCount = 10
-		case len(input) > 1 << 17: // 128Kb
+		case len(input) > 1<<17: // 128Kb
 			testCount = 50
-		case len(input) > 1 << 10: // 1Kb
+		case len(input) > 1<<10: // 1Kb
 			testCount = 100
 		default:
 			testCount = 10000
 		}
 		row[columnIndex] = fmt.Sprintf("%s(%db/%d)", name, len(input), testCount)
-		columnWidth[columnIndex] = max(columnWidth[columnIndex], len(row[columnIndex]) + 5)
+		columnWidth[columnIndex] = max(columnWidth[columnIndex], len(row[columnIndex])+5)
 		columnIndex++
 		rowMin = 1 << 60
 		for k, actor := range actors {
 			start = time.Now()
 			for i = 0; i < testCount; i++ {
 				_, err = actor(input)
-				assert(name + " " + k, err)
+				assert(name+" "+k, err)
 			}
 			rowTimes[columnIndex] = time.Now().Sub(start).Nanoseconds() / int64(testCount)
 			rowMin = min(rowMin, rowTimes[columnIndex])
@@ -109,8 +109,8 @@ func CompareUnmarshal(actors map[string]func(data []byte) (interface{}, error), 
 		}
 		columnIndex = 1
 		for _ = range actors {
-			row[columnIndex] = strconv.FormatFloat(float64(rowTimes[columnIndex]) / float64(rowMin), 'G', 3, 64)
-			columnWidth[columnIndex] = max(columnWidth[columnIndex], len(row[columnIndex]) + 5)
+			row[columnIndex] = strconv.FormatFloat(float64(rowTimes[columnIndex])/float64(rowMin), 'G', 3, 64)
+			columnWidth[columnIndex] = max(columnWidth[columnIndex], len(row[columnIndex])+5)
 			columnIndex++
 		}
 		outTable[rowIndex] = row

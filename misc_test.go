@@ -1,15 +1,16 @@
 package json_test_suite_test
 
 import (
-	"testing"
 	"fmt"
-	"."
+	"testing"
+
+	json_test_suite "github.com/acrazing/json-test-suite"
 )
 
 func TestFmt(t *testing.T) {
 	fmt.Printf("[%6s]\n", "he")
-	fmt.Printf("%%%d.\n", 1 + 5)
-	fmt.Printf(fmt.Sprintf("%%%dd.\n", 1 + 5), 2)
+	fmt.Printf("%%%d.\n", 1+5)
+	fmt.Printf(fmt.Sprintf("%%%dd.\n", 1+5), 2)
 }
 
 func TestCompareUnmarshal(t *testing.T) {
